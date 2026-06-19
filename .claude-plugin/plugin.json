@@ -1,0 +1,12 @@
+{
+  "name": "ai-architecture-enforcer",
+  "description": "Keeps AI coding agents (Claude Code) from drifting away from your project's architecture — per-project layer/import rules, file-size limits, and circular-dependency detection enforced via hooks.",
+  "version": "1.0.0",
+  "author": {
+    "name": "jamesjin7088"
+  },
+  "homepage": "https://github.com/jamesjin7088/ai-architecture-enforcer",
+  "repository": "https://github.com/jamesjin7088/ai-architecture-enforcer",
+  "license": "MIT",
+  "keywords": ["architecture", "static-analysis", "hexagonal", "linting", "hooks"]
+}

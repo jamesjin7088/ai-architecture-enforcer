@@ -1,0 +1,27 @@
+{
+  "maxLinesPerFile": 300,
+  "excludePaths": ["node_modules", "dist", "build", ".git", "vendor"],
+  "checkCircularDeps": true,
+  "layers": [
+    {
+      "name": "domain",
+      "paths": ["src/domain/**"],
+      "forbiddenImports": ["src/infra/**", "src/adapters/**", "src/presentation/**"]
+    },
+    {
+      "name": "application",
+      "paths": ["src/application/**"],
+      "forbiddenImports": ["src/infra/**", "src/presentation/**"]
+    },
+    {
+      "name": "infra",
+      "paths": ["src/infra/**"],
+      "forbiddenImports": []
+    },
+    {
+      "name": "presentation",
+      "paths": ["src/presentation/**"],
+      "forbiddenImports": []
+    }
+  ]
+}

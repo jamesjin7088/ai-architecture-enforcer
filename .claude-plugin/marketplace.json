@@ -1,0 +1,22 @@
+{
+  "name": "ai-architecture-enforcer",
+  "owner": {
+    "name": "jamesjin7088"
+  },
+  "description": "Architecture enforcement plugin for Claude Code",
+  "plugins": [
+    {
+      "name": "ai-architecture-enforcer",
+      "source": "./",
+      "description": "Keeps AI coding agents from drifting away from your project's architecture via per-project rules and hooks.",
+      "version": "1.0.0",
+      "author": {
+        "name": "jamesjin7088"
+      },
+      "homepage": "https://github.com/jamesjin7088/ai-architecture-enforcer",
+      "repository": "https://github.com/jamesjin7088/ai-architecture-enforcer",
+      "license": "MIT",
+      "keywords": ["architecture", "static-analysis", "hexagonal", "linting", "hooks"]
+    }
+  ]
+}
