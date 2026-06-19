@@ -1,3 +1,5 @@
+English | [한국어](README.ko.md)
+
 # ai-architecture-enforcer
 
 A Claude Code plugin that keeps AI coding agents from quietly drifting away from your
