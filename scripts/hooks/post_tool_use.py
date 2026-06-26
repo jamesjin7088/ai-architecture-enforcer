@@ -41,10 +41,31 @@ def main():
     if not violations:
         return
 
-    reason = "Architecture violation(s) in " + rel + ":\n" + "\n".join(
-        f"  line {v['line']}: {v['message']}" for v in violations
+    errors = [v for v in violations if v.get("severity") != arch_lib.SEVERITY_WARNING]
+    warnings = [v for v in violations if v.get("severity") == arch_lib.SEVERITY_WARNING]
+
+    if errors:
+        reason = "Architecture violation(s) in " + rel + ":\n" + "\n".join(
+            f"  line {v['line']}: {v['message']}" for v in errors
+        )
+        if warnings:
+            reason += "\n\nAdvisory (not blocking):\n" + "\n".join(
+                f"  line {v['line']}: {v['message']}" for v in warnings
+            )
+        print(json.dumps({"decision": "block", "reason": reason}))
+        return
+
+    # Warnings only: surface as advisory context, do NOT block the edit. Line count is a
+    # soft cohesion signal, so a clean, single-responsibility file should not be interrupted.
+    context = "Architecture advisory for " + rel + " (not blocking):\n" + "\n".join(
+        f"  line {v['line']}: {v['message']}" for v in warnings
     )
-    print(json.dumps({"decision": "block", "reason": reason}))
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PostToolUse",
+            "additionalContext": context,
+        }
+    }))
 
 
 if __name__ == "__main__":

@@ -22,10 +22,21 @@ Help the user set up architecture rules for this project.
    `.architecture.json` directly to reflect:
    - `layers`: each with a `name`, glob `paths`, and `forbiddenImports` (glob patterns the
      layer must not import from).
-   - `maxLinesPerFile`: a sensible per-file line limit for this codebase (default 300).
+   - `maxLinesPerFile`: the **hard** per-file line limit that blocks (default 600). The goal
+     is one responsibility per file — line count is just a proxy, so keep this generous.
+   - `warnLinesPerFile`: the **soft** line signal (default 300). Files over this get a
+     non-blocking "is this still one responsibility?" nudge, not a failure. Set to `null` to
+     turn the soft signal off.
+   - `exemptSingleResponsibilityFile`: when true (default), a file over the hard limit that
+     is a single cohesive unit (one dominant function/class) is downgraded to a warning
+     instead of forcing a split. Leave this on unless you really want a strict line cap.
    - `checkCircularDeps`: whether to flag circular imports (default true).
    - `excludePaths`: directories to skip (node_modules, dist, build, vendor, etc. are
      already excluded by default — only add project-specific ones).
+
+   When discussing limits with the user, explain that the primary criterion is "one file =
+   one responsibility + a good name." Treat 300 as a smell signal and 600 as the hard cap;
+   don't push for splits that just move lines around without separating responsibilities.
 
 4. Confirm the final config with the user before leaving it in place. Do not silently
    overwrite an existing `.architecture.json` — if one exists, show its contents and ask

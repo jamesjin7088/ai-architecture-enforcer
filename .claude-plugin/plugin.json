@@ -1,7 +1,7 @@
 {
   "name": "ai-architecture-enforcer",
   "description": "Keeps AI coding agents (Claude Code) from drifting away from your project's architecture — per-project layer/import rules, file-size limits, and circular-dependency detection enforced via hooks.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": {
     "name": "jamesjin7088"
   },

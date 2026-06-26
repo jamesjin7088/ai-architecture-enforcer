@@ -29,11 +29,29 @@ Your job:
    debt — mention but don't block on) and ones newly introduced by this change (should be
    fixed before merging).
 
-5. For each new violation, propose a specific fix: which file the misplaced logic should
-   move to, which import should be inverted via an interface/port, or how the file should
-   be split. Be concrete — name files and directories, don't give generic advice.
+5. Treat severity honestly. The checker tags findings as `error` or `warning`:
+   - **Errors** (forbidden imports, circular deps, files over the hard limit that carry
+     more than one responsibility) should be fixed before merging.
+   - **Warnings** (files over the soft limit, or over the hard limit but consisting of a
+     single cohesive unit) are *soft signals*, not failures. Don't demand a split to make a
+     number go down.
 
-6. If there are no rules configured or no violations found, say so plainly instead of
+6. **Cohesion is the real target; line count is only a proxy for it.** Before recommending
+   a split, ask "does this file hold more than one responsibility?" — not "is it over N
+   lines?". A well-named, cohesive 500-line file is better than two 250-line files that
+   import each other. In particular:
+   - Never recommend splitting a single large function/class just to satisfy a line budget.
+     Splitting a single flow across files increases tracking burden for both humans and
+     agents. Only break up a function when it genuinely does several things.
+   - When you do recommend a split, justify it by the distinct responsibilities you see,
+     and name the resulting modules — don't cite the line count as the reason.
+
+7. For each new violation, propose a specific fix: which file the misplaced logic should
+   move to, which import should be inverted via an interface/port, or how the file should
+   be split by responsibility. Be concrete — name files and directories, don't give generic
+   advice.
+
+8. If there are no rules configured or no violations found, say so plainly instead of
    manufacturing findings.
 
 Keep the review focused on architecture/boundaries — leave style, performance, and general

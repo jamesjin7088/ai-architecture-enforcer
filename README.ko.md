@@ -22,10 +22,29 @@ Claude Code 같은 AI 코딩 에이전트가 작업하면서 프로젝트의 아
 - **diff 단위 심층 리뷰.** 변경 사항을 아키텍처 준수 관점에서만 집중적으로 리뷰하는
   `architecture-reviewer` 서브에이전트 (일반 코드 리뷰와는 별도 패스).
 
-검사 항목: 파일당 최대 라인 수, 레이어 경계를 넘는 금지된 임포트, 순환 임포트 체인.
-임포트 스캐너는 JS/TS(`import`, `require`)와 Python(`import`, `from ... import`) 문법을
-정규식으로 인식합니다 — 완전한 컴파일러가 아니라 빠르게 동작하는 휴리스틱 린터로 의도적으로
-설계했습니다.
+검사 항목: 파일 크기(소프트 + 하드 라인 제한), 레이어 경계를 넘는 금지된 임포트, 순환
+임포트 체인. 임포트 스캐너는 JS/TS(`import`, `require`)와 Python(`import`,
+`from ... import`) 문법을 정규식으로 인식합니다 — 완전한 컴파일러가 아니라 빠르게 동작하는
+휴리스틱 린터로 의도적으로 설계했습니다.
+
+## 라인 수보다 응집도(cohesion) 우선
+
+라인 수는 **대리지표**일 뿐이고, 진짜 목표는 **"한 파일 = 한 책임 + 좋은 이름"**입니다.
+잘 명명된 응집적인 500줄 파일이, 서로 임포트하는 250줄 × 2보다 사람과 에이전트 모두에게
+더 친절합니다. 또 단일 함수를 라인 예산 때문에 억지로 쪼개면 흐름을 따라가기가 더 어려워질
+뿐입니다. 그래서 파일 크기 검사는 의도적으로 2단계이며 응집도를 인식합니다:
+
+- **`warnLinesPerFile` (소프트 신호, 기본값 300)** — "이 파일이 아직 한 책임인가?"를 점검하라는
+  비차단(non-blocking) 신호. 스캔을 실패시키거나 편집을 막지 않습니다.
+- **`maxLinesPerFile` (하드 제한, 기본값 600)** — 차단합니다. *단, 파일이 단일 응집 단위인
+  경우는 예외.*
+- **`exemptSingleResponsibilityFile` (기본값 true)** — 하드 제한을 넘었지만 하나의 지배적
+  정의(단일 함수 또는 클래스)로 이루어진 파일은 분할을 강제하는 대신 경고로 강등됩니다.
+  탐지에는 Python의 AST와 보수적인 JS/TS 휴리스틱을 사용합니다.
+
+모든 발견 항목은 `error` 또는 `warning`으로 태깅됩니다. 실시간 훅은 `error`만 차단하고,
+`warning`은 권고성 컨텍스트로 전달합니다. 소프트 신호를 끄려면 `warnLinesPerFile`를 `null`로,
+엄격한 라인 상한을 원하면 `exemptSingleResponsibilityFile`를 `false`로 설정하세요.
 
 ## 설치
 
@@ -50,7 +69,9 @@ Run arch-init
 
 ```jsonc
 {
-  "maxLinesPerFile": 300,
+  "maxLinesPerFile": 600,
+  "warnLinesPerFile": 300,
+  "exemptSingleResponsibilityFile": true,
   "excludePaths": ["node_modules", "dist", "build", ".git", "vendor"],
   "checkCircularDeps": true,
   "layers": [
@@ -66,7 +87,12 @@ Run arch-init
 - `layers[].paths` — 이 레이어에 속하는 파일을 식별하는 glob 패턴.
 - `layers[].forbiddenImports` — 이 레이어의 파일이 절대 임포트하면 안 되는 대상의 glob
   패턴. 비워두면 해당 레이어는 임포트 제한이 없습니다.
-- `maxLinesPerFile` — `null`로 설정하면 파일 크기 검사를 완전히 끕니다.
+- `maxLinesPerFile` — 하드 제한. 초과하면 `error`(차단). `null`로 설정하면 하드 파일 크기
+  검사를 완전히 끕니다.
+- `warnLinesPerFile` — 소프트 신호. 초과하면 비차단 `warning`. `null`로 설정하면 소프트
+  신호를 끕니다. 위의 [응집도 우선](#라인-수보다-응집도cohesion-우선) 섹션 참고.
+- `exemptSingleResponsibilityFile` — `true`(기본값)이면 하드 제한을 넘은 파일이라도 단일
+  응집 단위이면 분할을 강제하지 않고 경고로 강등합니다.
 - `excludePaths`는 기본 제외 목록(`node_modules`, `dist`, `build`, `.git`, `vendor`,
   `__pycache__`, `.venv`, `venv`)과 합쳐집니다.
 

@@ -23,10 +23,30 @@ compliance on demand.
 - **Deep review for diffs.** An `architecture-reviewer` subagent for reviewing a set of
   changes specifically for architecture compliance (separate from general code review).
 
-Checks performed: max lines per file, forbidden imports across layer boundaries, and
-circular import chains. The import scanner understands JS/TS (`import`, `require`) and
-Python (`import`, `from ... import`) syntax via regex — it's a fast heuristic linter, not
-a full compiler, by design.
+Checks performed: file size (soft + hard line limits), forbidden imports across layer
+boundaries, and circular import chains. The import scanner understands JS/TS (`import`,
+`require`) and Python (`import`, `from ... import`) syntax via regex — it's a fast heuristic
+linter, not a full compiler, by design.
+
+## Cohesion first, line count second
+
+Line count is a *proxy*; the real target is **one file = one responsibility + a good name**.
+A well-named, cohesive 500-line file is friendlier to humans and agents than two 250-line
+files that import each other, and splitting a single large function just to pass a line
+budget makes a flow harder to follow, not easier. So the file-size check is deliberately
+two-tiered and cohesion-aware:
+
+- **`warnLinesPerFile` (soft signal, default 300)** — a non-blocking nudge: "is this still
+  one responsibility?" It never fails a scan or blocks an edit.
+- **`maxLinesPerFile` (hard limit, default 600)** — blocks, *unless* the file is a single
+  cohesive unit.
+- **`exemptSingleResponsibilityFile` (default true)** — a file over the hard limit that is
+  one dominant definition (a single function or class) is downgraded to a warning instead of
+  being forced to split. Detection uses Python's AST and a conservative JS/TS heuristic.
+
+Every finding is tagged `error` or `warning`. The live hook only blocks on errors; warnings
+are surfaced as advisory context. Set `warnLinesPerFile` to `null` to drop the soft signal,
+or `exemptSingleResponsibilityFile` to `false` if you want a strict line cap.
 
 ## Install
 
@@ -51,7 +71,9 @@ writing anything.
 
 ```jsonc
 {
-  "maxLinesPerFile": 300,
+  "maxLinesPerFile": 600,
+  "warnLinesPerFile": 300,
+  "exemptSingleResponsibilityFile": true,
   "excludePaths": ["node_modules", "dist", "build", ".git", "vendor"],
   "checkCircularDeps": true,
   "layers": [
@@ -67,7 +89,12 @@ writing anything.
 - `layers[].paths` — glob patterns identifying which files belong to this layer.
 - `layers[].forbiddenImports` — glob patterns this layer's files must never import from.
   A layer with no entry here has no import restrictions.
-- `maxLinesPerFile` — set to `null` to disable the file-size check entirely.
+- `maxLinesPerFile` — hard limit; over it is an `error` (blocks). Set to `null` to disable
+  the hard file-size check entirely.
+- `warnLinesPerFile` — soft signal; over it is a non-blocking `warning`. Set to `null` to
+  disable the soft signal. See [Cohesion first](#cohesion-first-line-count-second) above.
+- `exemptSingleResponsibilityFile` — when `true` (default), a file over the hard limit that
+  is a single cohesive unit is downgraded to a warning rather than forced to split.
 - `excludePaths` are merged with a built-in default list (`node_modules`, `dist`, `build`,
   `.git`, `vendor`, `__pycache__`, `.venv`, `venv`).
 

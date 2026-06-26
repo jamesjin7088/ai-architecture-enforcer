@@ -31,23 +31,32 @@ def cmd_full(root):
 
     violations, cycles, truncated = arch_lib.run_full_scan(root, config)
 
+    errors = [v for v in violations if v.get("severity") != arch_lib.SEVERITY_WARNING]
+    warnings = [v for v in violations if v.get("severity") == arch_lib.SEVERITY_WARNING]
+
     if not violations and not cycles:
         print("Architecture check passed: no violations found.")
         return 0
 
-    if violations:
-        print(f"Found {len(violations)} architecture violation(s):\n")
-        for v in violations:
+    if errors:
+        print(f"Found {len(errors)} architecture violation(s) [error]:\n")
+        for v in errors:
             print(f"  {v['file']}:{v['line']}  {v['message']}")
 
     if cycles:
-        print(f"\nFound {len(cycles)} circular import chain(s):\n")
+        print(f"\nFound {len(cycles)} circular import chain(s) [error]:\n")
         for cycle in cycles:
             print("  " + " -> ".join(cycle))
         if truncated:
             print("  ... (more cycles exist but were not shown, capped for performance)")
 
-    return 1
+    if warnings:
+        print(f"\n{len(warnings)} advisory warning(s) [non-blocking — soft cohesion signals]:\n")
+        for v in warnings:
+            print(f"  {v['file']}:{v['line']}  {v['message']}")
+
+    # Warnings are soft signals and never fail the scan; only hard errors / cycles do.
+    return 1 if (errors or cycles) else 0
 
 
 def cmd_init(root):
@@ -74,8 +83,13 @@ def cmd_init(root):
                     f"{other['paths'][0]}" for other in layers if other["name"] != "domain"
                 ]
 
+    # Cohesion-first defaults: 300 is a soft "is this still one responsibility?" signal,
+    # 600 is the hard limit, and a file that is a single cohesive unit is exempt from the
+    # hard limit (splitting one big function/class just to pass a line budget is a net loss).
     config = {
-        "maxLinesPerFile": 300,
+        "maxLinesPerFile": 600,
+        "warnLinesPerFile": 300,
+        "exemptSingleResponsibilityFile": True,
         "excludePaths": arch_lib.DEFAULT_EXCLUDE_PATHS,
         "checkCircularDeps": True,
         "layers": layers,

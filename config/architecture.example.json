@@ -1,5 +1,7 @@
 {
-  "maxLinesPerFile": 300,
+  "maxLinesPerFile": 600,
+  "warnLinesPerFile": 300,
+  "exemptSingleResponsibilityFile": true,
   "excludePaths": ["node_modules", "dist", "build", ".git", "vendor"],
   "checkCircularDeps": true,
   "layers": [
